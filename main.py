@@ -7,6 +7,8 @@ LOGGER: logging.Logger = logging.getLogger(__name__)
 
 
 def define_logger():
+    if 'logs' not in os.listdir():
+        os.mkdir('logs')
     log_file = 'logs/yahoo_extractor.log'
     log_file_path = os.path.abspath(log_file)
     print(f'Log file path: {log_file_path}')
