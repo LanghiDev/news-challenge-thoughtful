@@ -4,22 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-rpaframework = "==28.6.1"
-typing-extensions = "==4.9.0"
-filelock = "==3.13.1"
-requests = "==2.32.3"
 pydantic = "==2.8.2"
 pydantic_core = "==2.20.1"
-robotframework = "==6.1.1"
-robotframework-pythonlibcore = "==4.4.1"
-robotframework-requests = "==0.9.7"
-robotframework-seleniumlibrary = "==6.5.0"
-robotframework-seleniumtestability = "==2.1.0"
 rpaframework= "==28.6.1"
 rpaframework-core = "==11.3.3"
-rpaframework-pdf = "==7.3.2"
 selenium = "==4.15.2"
-
 
 [dev-packages]
 
