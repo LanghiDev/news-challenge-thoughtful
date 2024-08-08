@@ -33,15 +33,15 @@ class YahooExtractor:
             # Click in search button
             self.browser.click_button(locator=SEARCH_BUTTON)
             # Click in news section to get only news content
-            try:
-                self.browser.click_element(locator=NEWS_SECTION)
-            except SeleniumLibrary.errors.ElementNotFound:
-                self.logger.info("Trying to get NEWS in another tab.")
-                sleep(5)
+            sleep(5)
+            tabs: list[str] = self.browser.get_window_handles()
+            # Verify if browser opens a new tab
+            if len(tabs) > 1:
+                self.logger.info("Getting NEWS in another tab.")
                 tabs = self.browser.get_window_handles()
                 self.browser.driver.switch_to.window(tabs[-1])
-                self.browser.click_element(locator=NEWS_SECTION)
 
+            self.browser.click_element(locator=NEWS_SECTION)
             news_elements: list[WebElement] = self.browser.find_elements(locator=NEWS_BOX)
             if not news_elements:
                 self.logger.warning(f'News not found with "{self.phrase_to_search}".')
@@ -53,22 +53,40 @@ class YahooExtractor:
             self.logger.exception("Something got wrong in searching news.")
 
     def get_news_data(self, news_elements: list[WebElement]):
+        browser_opens_tab: bool = True
+
         news_pictures: list[WebElement] = self.browser.find_elements(locator=NEWS_IMAGE)
 
         for i, news in enumerate(news_elements):
             try:
                 img_src: str = self._get_img_source(news_pictures, news_index=i)
                 description: str = self._get_news_description(news)
-                # Enter a news
-                self.browser.click_element(locator=NEWS_DATA)
+                # Accesses a news
+                news_elements_locators = self.browser.find_elements(NEWS_DATA)
+                self.browser.click_element(locator=news_elements_locators[i])
+                sleep(5)
                 # Extracts title, description, ...
-                tabs = self.browser.get_window_handles()
+                tabs: list[str] = self.browser.get_window_handles()
+                try:
+                    search_tab = tabs[1]
+                    news_tab = tabs[2]
+                except IndexError:
+                    try:
+                        search_tab = tabs[0]
+                        news_tab = tabs[1]
+                    except IndexError:
+                        browser_opens_tab = False
+
                 title: str = self.browser.get_text(locator=NEWS_TITLE)
+                if not title and not browser_opens_tab:
+                    self.logger.error(f"Impossible to extract {i}° news datas.")
+                    continue
+
                 if not title:
-                    self.logger.info("Trying to extract NEWS data in another tab.")
+                    self.logger.info("Extracting NEWS data in another tab.")
                     sleep(5)
 
-                    self.browser.driver.switch_to.window(tabs[-1])
+                    self.browser.driver.switch_to.window(news_tab)  # noqa
                     title = self.browser.get_text(locator=NEWS_TITLE)
 
                 date: str = self.browser.get_text(locator=NEWS_DATE)
@@ -76,6 +94,8 @@ class YahooExtractor:
                 count_phrase: int = count_phrases_in_title_and_desc(self.phrase_to_search, title, description)
 
                 has_money: bool = has_money_in_title_and_desc(title, description)
+
+                self.logger.info(f"Extracting {i+1}° news from {date}")
 
                 self.news_dtos.append(NewsDTO(
                     title=title,
@@ -86,7 +106,8 @@ class YahooExtractor:
                     money_news=has_money
                 ))
 
-                self.browser.driver.switch_to.window(tabs[-2])
+                self.browser.close_window()
+                self.browser.driver.switch_to.window(search_tab)  # noqa
             except Exception:
                 self.logger.exception("Something got wrong when extracting news data")
 
