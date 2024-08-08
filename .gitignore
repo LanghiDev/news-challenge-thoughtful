@@ -1,5 +1,7 @@
 *.log
 !logs/
 .idea/
-news_extractor/__pycache__/__init__.cpython-310.pyc
-news_extractor/__pycache__/yahoo_extractor.cpython-310.pyc
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
