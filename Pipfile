@@ -9,6 +9,8 @@ pydantic_core = "==2.20.1"
 rpaframework= "==28.6.1"
 rpaframework-core = "==11.3.3"
 selenium = "==4.15.2"
+webdriver_manager = "==4.0.2"
+pandas = "*"
 
 [dev-packages]
 
