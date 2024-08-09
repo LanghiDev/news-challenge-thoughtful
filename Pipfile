@@ -10,7 +10,7 @@ rpaframework= "==28.6.1"
 rpaframework-core = "==11.3.3"
 selenium = "==4.15.2"
 webdriver_manager = "==4.0.2"
-pandas = "*"
+pandas = "==2.2.2"
 
 [dev-packages]
 
