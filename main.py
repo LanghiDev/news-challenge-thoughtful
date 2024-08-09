@@ -8,13 +8,22 @@ import pandas as pd
 from datetime import datetime
 
 
-LOGGER: logging.Logger = logging.getLogger(__name__)
-generated_folder = "generated"
+LOGGER: logging.Logger = logging.getLogger("Yahoo Extractor")
+generated_folder = "output"
 
-def define_logger():
+
+def management_path():
+    if generated_folder not in os.listdir():
+        os.mkdir(generated_folder)
     if 'logs' not in os.listdir(generated_folder):
         os.mkdir(f'{generated_folder}/logs')
+    if 'excel' not in os.listdir(generated_folder):
+        os.mkdir(f'{generated_folder}/excel')
+    if 'pictures' not in os.listdir(generated_folder):
+        os.mkdir(f'{generated_folder}/pictures')
 
+
+def define_logger():
     log_file = f'{generated_folder}/logs/yahoo_extractor.log'
     log_file_path = os.path.abspath(log_file)
     print(f'Log file path: {log_file_path}')
@@ -44,15 +53,22 @@ def export_to_excel(news_list: list[NewsDTO]):
     LOGGER.info(f"Exported into {excel_name} Excel file.")
 
 
-def main(phrase_to_search: str, category: str, months: int):
+def main(**kwargs):
     LOGGER.info('Initializing news extraction process.')
 
     # Unfortunately, Yahoo hasn't category after searching
+    while True:
+        yahoo_extractor = YahooExtractor(logger=LOGGER, **kwargs)
+        news_elements = yahoo_extractor.search_news()
+        if not news_elements:
+            break
+        try_again = yahoo_extractor.get_news_data(news_elements=news_elements)
+        if try_again:
+            LOGGER.warning("Restarting news extraction process.")
+            yahoo_extractor.finish_process()
+            continue
+        break
 
-    yahoo_extractor = YahooExtractor(phrase_to_search=phrase_to_search, months=months, logger=LOGGER)
-    news_elements = yahoo_extractor.search_news()
-    if news_elements:
-        yahoo_extractor.get_news_data(news_elements=news_elements)
     yahoo_extractor.finish_process()
 
     LOGGER.info("Exporting data to Excel...")
@@ -62,9 +78,9 @@ def main(phrase_to_search: str, category: str, months: int):
 
 
 if __name__ == '__main__':
+    management_path()
     define_logger()
 
-    search_phrase = "Brazil south"
-    category = "Science"
-    months = 0
-    main(phrase_to_search=search_phrase, category=category, months=months)
+    parameters = {"phrase_to_search": "NASA", "category": "Science", "months": 2}
+
+    main(**parameters)
