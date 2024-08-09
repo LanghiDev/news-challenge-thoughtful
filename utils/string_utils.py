@@ -1,7 +1,7 @@
 def count_phrases_in_title_and_desc(phrase: str, title: str, description: str):
     phrase_words = phrase.lower().strip().split(' ')
-    counter: int = sum(title.count(w) for w in phrase_words)
-    counter += sum(description.count(w) for w in phrase_words)
+    counter: int = sum(title.lower().count(w) for w in phrase_words)
+    counter += sum(description.lower().count(w) for w in phrase_words)
     return counter
 
 
