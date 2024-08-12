@@ -2,6 +2,8 @@
 All Yahoo News xpaths elements that are used on process
 """
 
+ALL_CONTENT = '//html'
+
 SEARCH_BAR = '//input[@id="ybar-sbq"]'
 
 SEARCH_BUTTON = '//button[@id="ybar-search"]'
@@ -14,6 +16,6 @@ NEWS_DATA = f'{NEWS_BOX}//a[contains(@class, "thmb")]'
 
 
 NEWS_TITLE = f'{NEWS_BOX}//h4//a'
-NEWS_DATE_XPATHS = ['//time', '//div[contains(@class, "timestamp")]']
+NEWS_DATE_XPATHS = ['//time', '//div[contains(@class, "timestamp")]', '//span[contains(@class, "date-time")]']
 
 PAGES = '//div[contains(@class, "pages")]//a'
