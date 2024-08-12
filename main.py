@@ -56,18 +56,24 @@ def export_to_excel(news_list: list[NewsDTO]):
 def main(**kwargs):
     LOGGER.info('Initializing news extraction process.')
 
-    # Unfortunately, Yahoo hasn't category after searching
-    while True:
-        yahoo_extractor = YahooExtractor(logger=LOGGER, **kwargs)
-        news_elements = yahoo_extractor.search_news()
-        if not news_elements:
+    try:
+        # Unfortunately, Yahoo hasn't category after searching
+        while True:
+            yahoo_extractor = YahooExtractor(logger=LOGGER, **kwargs)
+            news_elements = yahoo_extractor.search_news()
+            if not news_elements:
+                break
+            try_again = yahoo_extractor.get_news_data(news_elements=news_elements)
+            if try_again:
+                LOGGER.warning("Restarting news extraction process.")
+                yahoo_extractor.finish_process()
+                continue
             break
-        try_again = yahoo_extractor.get_news_data(news_elements=news_elements)
-        if try_again:
-            LOGGER.warning("Restarting news extraction process.")
-            yahoo_extractor.finish_process()
-            continue
-        break
+
+    except KeyboardInterrupt:
+        LOGGER.warning("Interrupting process...")
+        yahoo_extractor.finish_process()  # noqa
+        return
 
     yahoo_extractor.finish_process()
 
@@ -81,6 +87,6 @@ if __name__ == '__main__':
     management_path()
     define_logger()
 
-    parameters = {"phrase_to_search": "NASA", "category": "Science", "months": 2}
+    parameters = {"phrase_to_search": "Love", "category": "Science", "months": 1}
 
     main(**parameters)
