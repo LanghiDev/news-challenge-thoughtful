@@ -46,7 +46,8 @@ class YahooExtractor(BaseSelenium):
                 self._change_tab(tab=tabs[-1])
 
             # Click in news section to get only news content
-            self.wait_for_element_clickable((By.XPATH, xpaths.NEWS_SECTION))
+            if not self.wait_for_element_clickable((By.XPATH, xpaths.NEWS_SECTION)):
+                return None
             self.browser.click_element(locator=xpaths.NEWS_SECTION)
 
             self.wait_for_element((By.XPATH, xpaths.NEWS_BOX))
@@ -64,9 +65,11 @@ class YahooExtractor(BaseSelenium):
         # Get news elements
         self.wait_for_element((By.XPATH, xpaths.NEWS_DATA))
         news_elements_locators = self.browser.find_elements(xpaths.NEWS_DATA)
+        self.logger.info("Got NEWS data.")
         # Get titles elements
         self.wait_for_element((By.XPATH, xpaths.NEWS_TITLE))
         news_titles: list[WebElement] = self.browser.find_elements(xpaths.NEWS_TITLE)
+        self.logger.info("Got NEWS titles.")
         # Iterates about NEWS, extracting your datas
         for i, news in enumerate(news_elements):
             try:
@@ -78,13 +81,17 @@ class YahooExtractor(BaseSelenium):
                     continue
 
                 # Extracts title, description, ...
-                if self._doesnt_find_news_data(i):
-                    self.logger.error(f"Impossible to extract {i}° news datas.")
-                    continue
+                self._try_alternate_tab()
 
                 img_file: str = self._get_img_filename(picture_index=i)
+                if img_file == self.paid_news:
+                    self.logger.error(f"Impossible to extract {i+1}° news datas.")
+                    self._back_search_tab()
+                    continue
+
                 date: str = self._verify_news_date(i)
                 if date == 'skip':
+                    self._back_search_tab()
                     continue
                 count_phrase: int = count_phrases_in_title_and_desc(self.phrase_to_search, title, description)
                 has_money: bool = has_money_in_title_and_desc(title, description)
@@ -100,10 +107,9 @@ class YahooExtractor(BaseSelenium):
                     money_news=has_money
                 ))
 
-                self.browser.close_window()
-                self._change_tab(self.search_tab)  # noqa
+                self._back_search_tab()
             except selenium.common.exceptions.WebDriverException:
-                self.logger.exception("Erro no DevTools, tentando novamente.")
+                self.logger.exception("Error in DevTools, trying again.")
                 return True
             except Exception:  # noqa
                 self.logger.exception("Something got wrong when extracting news data")
@@ -114,21 +120,18 @@ class YahooExtractor(BaseSelenium):
         if len(pages) > self.news_page:
             self._go_to_next_page(pages)
 
-    def _doesnt_find_news_data(self, news_index: int, browser_opens_tab: bool = True):
+    def _try_alternate_tab(self):
         tabs: list[str] = self._get_all_tabs()
         try:
             self.search_tab = tabs[1]
             news_tab = tabs[2]
+            self._change_tab(news_tab)
         except IndexError:
-            news_tab = None
-            browser_opens_tab = False
+            pass
 
-        img_file: str = self._get_img_filename(picture_index=news_index)
-        if not img_file and not browser_opens_tab:
-            return True
-
-        self._change_tab(news_tab)  # noqa
-        return False
+    def _back_search_tab(self):
+        self.browser.close_window()
+        self._change_tab(self.search_tab)
 
     def _select_news(self, news_locator: list[WebElement], index: int):
         try:
@@ -173,23 +176,23 @@ class YahooExtractor(BaseSelenium):
                 self.wait_for_element((By.XPATH, date_xpath), specific_timeout=0.9)
                 date = self.browser.get_text(locator=date_xpath)
                 break
-            except selenium.common.TimeoutException:
+            except SeleniumLibrary.errors.ElementNotFound:
                 continue
         return date
 
     def _get_img_filename(self, picture_index: int) -> str:
         img_file: str = ''
         try:
-            self.wait_for_element((By.XPATH, xpaths.NEWS_IMAGE), specific_timeout=0.9)
+            wait_result = self.wait_for_element((By.XPATH, xpaths.NEWS_IMAGE), specific_timeout=0.9)
+            if wait_result == self.paid_news:
+                return wait_result
             picture_locator = self.browser.find_element(xpaths.NEWS_IMAGE)
             if picture_locator:
                 img_file: str = self.extract_image(
                     element_locator=picture_locator,
                     img_filename=f'{self.pictures_folder}/news_picture_{picture_index + 1}.png')
-            else:
-                self.logger.error("Not possible to get this news picture.")
-        except (SeleniumLibrary.errors.ElementNotFound, selenium.common.exceptions.TimeoutException):
-            pass
+        except SeleniumLibrary.errors.ElementNotFound:
+            self.logger.error("Not possible to get this news picture.")
         return img_file
 
     def _do_search(self):
