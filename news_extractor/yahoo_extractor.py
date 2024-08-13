@@ -8,6 +8,7 @@ import selenium.common.exceptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
+from config import Config
 from news_extractor.base_selenium import BaseSelenium
 from news_website.dtos import NewsDTO
 from news_website import xpaths
@@ -16,11 +17,13 @@ from utils.date_parse import get_formatted_date, verify_news_date
 
 
 class YahooExtractor(BaseSelenium):
-    def __init__(self, logger: logging.Logger, **kwargs):
+    def __init__(self, logger: logging.Logger):
         super().__init__(logger)
-        self.phrase_to_search: str = kwargs["phrase_to_search"]
-        self.client_months: int = kwargs["months"]
-        self.category: str = kwargs["category"]
+
+        config = Config()
+        self.phrase_to_search = config.get_search_phrase()
+        self.client_months = config.get_months()
+
         self.news_dtos: list[NewsDTO] = []
 
         self.url: str = "https://news.yahoo.com"
@@ -196,6 +199,11 @@ class YahooExtractor(BaseSelenium):
         return img_file
 
     def _do_search(self):
+        try:
+            self.browser.wait_and_click_button(locator=xpaths.ACCEPT_ALL_BUTTON)
+            self.open_url(self.url)
+        except (SeleniumLibrary.errors.ElementNotFound, AssertionError):
+            pass
         # Typing phrase in search bar
         self.wait_for_element((By.XPATH, xpaths.SEARCH_BAR))
         self.browser.input_text(locator=xpaths.SEARCH_BAR, text=self.phrase_to_search)
