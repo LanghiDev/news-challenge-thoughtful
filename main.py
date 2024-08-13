@@ -53,13 +53,13 @@ def export_to_excel(news_list: list[NewsDTO]):
     LOGGER.info(f"Exported into {excel_name} Excel file.")
 
 
-def main(**kwargs):
+def main():
     LOGGER.info('Initializing news extraction process.')
 
     try:
         # Unfortunately, Yahoo hasn't category after searching
         while True:
-            yahoo_extractor = YahooExtractor(logger=LOGGER, **kwargs)
+            yahoo_extractor = YahooExtractor(logger=LOGGER)
             news_elements = yahoo_extractor.search_news()
             if not news_elements:
                 break
@@ -81,12 +81,3 @@ def main(**kwargs):
     export_to_excel(yahoo_extractor.news_dtos)
 
     LOGGER.info('Finishing news extraction process.')
-
-
-if __name__ == '__main__':
-    management_path()
-    define_logger()
-
-    parameters = {"phrase_to_search": "Love", "category": "Science", "months": 1}
-
-    main(**parameters)
