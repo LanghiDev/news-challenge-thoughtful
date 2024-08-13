@@ -4,6 +4,8 @@ All Yahoo News xpaths elements that are used on process
 
 ALL_CONTENT = '//html'
 
+ACCEPT_ALL_BUTTON = '//button[contains(@class, "accept-all")]'
+
 SEARCH_BAR = '//input[@id="ybar-sbq"]'
 
 SEARCH_BUTTON = '//button[@id="ybar-search"]'
